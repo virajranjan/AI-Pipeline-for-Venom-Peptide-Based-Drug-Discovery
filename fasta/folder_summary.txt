@@ -1,0 +1,2 @@
+Filename, Total Sequences
+conus_toxins_full_uniprot.fasta, 63
