@@ -1,7 +1,8 @@
 import os
 import numpy as np
 from collections import Counter
-
+from Physiochemical import Hydrophobicity, Aliphatic_Index
+from Bio.SeqUtils.ProtParam import ProteinAnalysis
 
 AMINO_ACIDS = sorted("ACDEFGHIKLMNPQRSTVWY")
 
@@ -13,10 +14,10 @@ def fasta_processor(fasta_dir):
     folder_summary_path = os.path.join(fasta_dir, "folder_summary.txt")
 
     with open(aminoacid_result_path, 'w') as file:
-        file.write("seq_id," + ",".join(AMINO_ACIDS) + "\n")
+        file.write("seq_id,   " + ",     ".join(AMINO_ACIDS) + ",   "+"Hydropho"+",  HW_Hydro"+",  Charge"+",  Mol_Wt"+",   Isoelectric pt"+",   instbl_indx"+",   Ali_index"+"\n")
 
     for file_name in os.listdir(fasta_dir):
-        if file_name.endswith('.fasta') or file_name.endswith('.fa'):
+        if file_name.endswith('.fasta'):
             fasta_file_found = True
             file_path = os.path.join(fasta_dir, file_name)
             print(f"[INFO] Processing file: {file_name}")
@@ -62,7 +63,6 @@ def aminoacid_processor(sequences, result_path):
         for seq_id, seq in sequences.items():
             length = len(seq)
             char_freq = Counter(seq)
-
             
             freq_vector = np.array(
                 [char_freq.get(aa, 0) / length for aa in AMINO_ACIDS],
@@ -70,9 +70,25 @@ def aminoacid_processor(sequences, result_path):
             )
 
            
-            file.write(seq_id)
+            file.write(seq_id+" ")
             for freq in freq_vector:
                 file.write(f",{freq:.4f}")
+            Prot_analysis = ProteinAnalysis(seq)
+            Hydrophob = Prot_analysis.gravy() #Uses Kyte-Doolittle method
+            charge = Prot_analysis.charge_at_pH(7.5) #uses Henderson-Hasselbalch equation
+            Mol_Weight = Prot_analysis.molecular_weight()
+            Ip = Prot_analysis.isoelectric_point() # isoelctric point
+            Instabilty = Prot_analysis.instability_index() 
+            HW_Hydro =  Hydrophobicity(seq)            #Hopp-Woods scales
+            Ali_index = Aliphatic_Index(seq)
+
+            file.write(f",  {Hydrophob:.4f}")
+            file.write(f",   {HW_Hydro:.4f}")
+            file.write(f",  {charge:.4f}")
+            file.write(f",   {Mol_Weight:.4f}")
+            file.write(f",   {Ip:.4f}")
+            file.write(f",       {Instabilty:.4f}")
+            file.write(f"         {Ali_index:.4f}")
             file.write("\n")
 
             vectors[seq_id] = freq_vector
